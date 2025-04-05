@@ -6,7 +6,7 @@ from unittest.mock import patch
 from expenses.main import main
 
 
-def test_main_captures_expense_entry(tmp_path: Path) -> None:
+def test_main_captures_expense_entry(data_dir: Path) -> None:
     # Given
     test_date = date(2024, 3, 21)
     test_inputs = [
@@ -21,11 +21,11 @@ def test_main_captures_expense_entry(tmp_path: Path) -> None:
     ]
 
     # When
-    with patch("builtins.input", side_effect=test_inputs), patch("pathlib.Path.cwd", return_value=tmp_path):
+    with patch("builtins.input", side_effect=test_inputs), patch("sys.argv", ["main.py", str(data_dir)]):
         main()
 
     # Then
-    expected_filename = tmp_path / f"se-{test_date.year}-{test_date.month:02d}.dat"
+    expected_filename = data_dir / f"se-{test_date.year}-{test_date.month:02d}.dat"
     assert expected_filename.exists()
 
     content = expected_filename.read_text()
@@ -33,7 +33,7 @@ def test_main_captures_expense_entry(tmp_path: Path) -> None:
     assert content == expected_content
 
 
-def test_main_captures_income_entry(tmp_path: Path) -> None:
+def test_main_captures_income_entry(data_dir: Path) -> None:
     # Given
     test_date = date(2024, 3, 21)
     test_inputs = [
@@ -48,11 +48,11 @@ def test_main_captures_income_entry(tmp_path: Path) -> None:
     ]
 
     # When
-    with patch("builtins.input", side_effect=test_inputs), patch("pathlib.Path.cwd", return_value=tmp_path):
+    with patch("builtins.input", side_effect=test_inputs), patch("sys.argv", ["main.py", str(data_dir)]):
         main()
 
     # Then
-    expected_filename = tmp_path / f"se-{test_date.year}-{test_date.month:02d}.dat"
+    expected_filename = data_dir / f"se-{test_date.year}-{test_date.month:02d}.dat"
     assert expected_filename.exists()
 
     content = expected_filename.read_text()
@@ -60,7 +60,7 @@ def test_main_captures_income_entry(tmp_path: Path) -> None:
     assert content == expected_content
 
 
-def test_main_handles_multiple_entries(tmp_path: Path) -> None:
+def test_main_handles_multiple_entries(data_dir: Path) -> None:
     # Given
     test_date = date(2024, 3, 21)
     test_inputs = [
@@ -84,11 +84,11 @@ def test_main_handles_multiple_entries(tmp_path: Path) -> None:
     ]
 
     # When
-    with patch("builtins.input", side_effect=test_inputs), patch("pathlib.Path.cwd", return_value=tmp_path):
+    with patch("builtins.input", side_effect=test_inputs), patch("sys.argv", ["main.py", str(data_dir)]):
         main()
 
     # Then
-    expected_filename = tmp_path / f"se-{test_date.year}-{test_date.month:02d}.dat"
+    expected_filename = data_dir / f"se-{test_date.year}-{test_date.month:02d}.dat"
     assert expected_filename.exists()
 
     content = expected_filename.read_text()
@@ -104,7 +104,7 @@ def test_main_handles_multiple_entries(tmp_path: Path) -> None:
     assert content == expected_content
 
 
-def test_main_handles_keyboard_interrupt(tmp_path: Path) -> None:
+def test_main_handles_keyboard_interrupt(data_dir: Path) -> None:
     # Given
     test_inputs = [
         "se",  # Country at startup
@@ -112,16 +112,16 @@ def test_main_handles_keyboard_interrupt(tmp_path: Path) -> None:
     ]
 
     # When
-    with patch("builtins.input", side_effect=test_inputs), patch("pathlib.Path.cwd", return_value=tmp_path):
+    with patch("builtins.input", side_effect=test_inputs), patch("sys.argv", ["main.py", str(data_dir)]):
         with patch("expenses.input_manager.InputManager.capture_entry", side_effect=KeyboardInterrupt):
             main()
 
     # Then
     # No files should be created
-    assert not any(tmp_path.iterdir())
+    assert not any(data_dir.iterdir())
 
 
-def test_main_handles_error_and_retries(tmp_path: Path) -> None:
+def test_main_handles_error_and_retries(data_dir: Path) -> None:
     # Given
     test_date = date(2024, 3, 21)
     test_inputs = [
@@ -140,11 +140,11 @@ def test_main_handles_error_and_retries(tmp_path: Path) -> None:
     ]
 
     # When
-    with patch("builtins.input", side_effect=test_inputs), patch("pathlib.Path.cwd", return_value=tmp_path):
+    with patch("builtins.input", side_effect=test_inputs), patch("sys.argv", ["main.py", str(data_dir)]):
         main()
 
     # Then
-    expected_filename = tmp_path / f"se-{test_date.year}-{test_date.month:02d}.dat"
+    expected_filename = data_dir / f"se-{test_date.year}-{test_date.month:02d}.dat"
     assert expected_filename.exists()
 
     content = expected_filename.read_text()

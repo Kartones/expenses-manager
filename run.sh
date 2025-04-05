@@ -23,14 +23,8 @@ else
     source .venv/bin/activate
 fi
 
-# Create config if it doesn't exist
-if [ ! -f "src/expenses/config.py" ]; then
-    echo "Creating config from sample..."
-    cp src/expenses/config.py.sample src/expenses/config.py
-fi
-
-# Run the application
-python -m src.expenses.main
+# Run the application, passing through any arguments
+python -m src.expenses.main "$@"
 
 # Deactivate virtual environment
 deactivate

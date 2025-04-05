@@ -42,30 +42,25 @@ A simple command-line tool to track personal expenses and income. It uses a simp
    pip install -r requirements.txt
    ```
 
-4. Create your configuration:
-   ```bash
-   cp src/expenses/config.py.sample src/expenses/config.py
-   ```
-   Edit `config.py` to customize your settings if needed.
-
 ## Usage
 
 ### Quick Start
 Run the application using the provided shell script:
 ```bash
-./run.sh
+./run.sh [data_dir]
 ```
 This script will:
 - Create virtual environment if not present
 - Install dependencies if needed
-- Run the application
+- Run the application with the specified data directory (defaults to current directory)
 - Clean up when done
 
 ### Manual Setup
 1. Run the application:
    ```bash
-   python -m src.expenses.main
+   python -m src.expenses.main [data_dir]
    ```
+   The optional `data_dir` argument specifies where expense/income files will be stored (defaults to current directory).
 
 2. Follow the interactive prompts:
    - Select country (es/se) at startup [defaults to se]
@@ -105,13 +100,11 @@ Add another entry? (y/n): n
 
 ## Configuration
 
-The application can be configured through `src/expenses/config.py` (copy from `config.py.sample`):
-
-- `DATA_DIR`: Path where expense/income files will be stored (defaults to current directory)
+The application stores expense/income files in the specified data directory (defaults to current directory if not provided).
 
 ## File Format
 
-Entries are stored in monthly files named `{country}-YYYY-MM.dat` in the configured data directory, where `country` is either `es` or `se`. The file format is:
+Entries are stored in monthly files named `{country}-YYYY-MM.dat` in the specified data directory, where `country` is either `es` or `se`. The file format is:
 
 For expenses (Sweden):
 ```

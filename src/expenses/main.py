@@ -1,10 +1,15 @@
-from expenses.config import DATA_DIR
+import sys
+from pathlib import Path
+
 from expenses.file_manager import FileManager
 from expenses.input_manager import InputManager
 
 
 def main() -> None:
     """Main entry point for the expenses CLI."""
+    # Get DATA_DIR from command line argument or default to current directory
+    data_dir = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
+
     print("Welcome to the Expenses Manager!")
     print("--------------------------------")
 
@@ -13,7 +18,7 @@ def main() -> None:
     file_manager = FileManager(country=input_manager.country)
 
     # Create data directory if it doesn't exist
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    data_dir.mkdir(parents=True, exist_ok=True)
 
     while True:
         try:
@@ -21,7 +26,7 @@ def main() -> None:
             entry = input_manager.capture_entry()
 
             # Write to file
-            file_manager.write_entry(DATA_DIR, entry)
+            file_manager.write_entry(data_dir, entry)
             print("\nEntry saved successfully!")
 
             # Ask if user wants to continue
