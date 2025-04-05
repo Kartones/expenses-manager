@@ -1,5 +1,4 @@
-from pathlib import Path
-
+from expenses.config import DATA_DIR
 from expenses.file_manager import FileManager
 from expenses.input_manager import InputManager
 
@@ -12,7 +11,9 @@ def main() -> None:
     input_manager = InputManager()
     input_manager.set_country()  # Get country selection at startup
     file_manager = FileManager(country=input_manager.country)
-    base_path = Path.cwd()
+
+    # Create data directory if it doesn't exist
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     while True:
         try:
@@ -20,7 +21,7 @@ def main() -> None:
             entry = input_manager.capture_entry()
 
             # Write to file
-            file_manager.write_entry(base_path, entry)
+            file_manager.write_entry(DATA_DIR, entry)
             print("\nEntry saved successfully!")
 
             # Ask if user wants to continue

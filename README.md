@@ -85,9 +85,15 @@ Add another item? (y/n): n
 Add another entry? (y/n): n
 ```
 
+## Configuration
+
+The application can be configured through `src/expenses/config.py`:
+
+- `DATA_DIR`: Path where expense/income files will be stored (defaults to current directory)
+
 ## File Format
 
-Entries are stored in monthly files named `{country}-YYYY-MM.dat` in the current directory, where `country` is either `es` or `se`. The file format is:
+Entries are stored in monthly files named `{country}-YYYY-MM.dat` in the configured data directory, where `country` is either `es` or `se`. The file format is:
 
 For expenses (Sweden):
 ```
