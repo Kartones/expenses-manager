@@ -44,6 +44,18 @@ A simple command-line tool to track personal expenses and income. It uses a simp
 
 ## Usage
 
+### Quick Start
+Run the application using the provided shell script:
+```bash
+./run.sh
+```
+This script will:
+- Create virtual environment if not present
+- Install dependencies if needed
+- Run the application
+- Clean up when done
+
+### Manual Setup
 1. Run the application:
    ```bash
    python -m src.expenses.main
