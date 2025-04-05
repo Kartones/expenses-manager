@@ -37,3 +37,6 @@ dmypy.json
 # OS specific
 .DS_Store
 Thumbs.db
+
+# Local configuration
+src/expenses/config.py

@@ -42,6 +42,12 @@ A simple command-line tool to track personal expenses and income. It uses a simp
    pip install -r requirements.txt
    ```
 
+4. Create your configuration:
+   ```bash
+   cp src/expenses/config.py.sample src/expenses/config.py
+   ```
+   Edit `config.py` to customize your settings if needed.
+
 ## Usage
 
 ### Quick Start
@@ -99,7 +105,7 @@ Add another entry? (y/n): n
 
 ## Configuration
 
-The application can be configured through `src/expenses/config.py`:
+The application can be configured through `src/expenses/config.py` (copy from `config.py.sample`):
 
 - `DATA_DIR`: Path where expense/income files will be stored (defaults to current directory)
 
