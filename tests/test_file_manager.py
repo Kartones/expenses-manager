@@ -308,11 +308,40 @@ def test_income_entry_with_spaces_in_description_fails() -> None:
         )
 
 
-def test_entry_with_spaces_in_category_fails() -> None:
-    # When/Then
-    with pytest.raises(InvalidDescriptionError, match=r"Category must use colons \(\:\) instead of spaces"):
-        ExpenseEntry(
-            date=date(2024, 3, 21),
-            category="Invalid Category",
-            items=[ExpenseItem(description="valid:description", amount=100)],
-        )
+def test_invalid_amount_retries(tmp_path: Path) -> None:
+    # Given
+    file_manager = FileManager()
+
+    # First entry
+    first_entry = ExpenseEntry(
+        date=date(2024, 3, 21),
+        category="Shopping",
+        items=[ExpenseItem(description="weekly:groceries", amount=100)],
+    )
+    file_manager.write_entry(tmp_path, first_entry)
+
+    # Second entry
+    second_entry = ExpenseEntry(
+        date=date(2024, 3, 21),
+        category="Shopping",
+        items=[ExpenseItem(description="weekly:groceries", amount=150)],
+    )
+
+    # When
+    file_manager.write_entry(tmp_path, second_entry)
+
+    # Then
+    expected_filename = tmp_path / file_manager.generate_filename(first_entry.date)
+    assert expected_filename.exists()
+
+    content = expected_filename.read_text()
+    expected_content = (
+        "2024/03/21 Shopping\n"
+        "  weekly:groceries                     kr 100\n"
+        "  * Assets:Checking\n"
+        "\n"
+        "2024/03/21 Shopping\n"
+        "  weekly:groceries                     kr 150\n"
+        "  * Assets:Checking\n"
+    )
+    assert content == expected_content

@@ -300,8 +300,7 @@ def test_spaces_in_category_retries() -> None:
     test_inputs = [
         "expense",  # Entry type
         "2024-03-21",  # Date
-        "Invalid Category",  # Invalid category with spaces
-        "Valid:Category",  # Valid category with colons
+        "Grocery Shopping",  # Category with spaces (now valid)
         "weekly:groceries",  # Description
         "100",  # Amount
         "n",  # No more items
@@ -313,7 +312,7 @@ def test_spaces_in_category_retries() -> None:
 
     # Then
     assert isinstance(entry, ExpenseEntry)
-    assert entry.category == "Valid:Category"
+    assert entry.category == "Grocery Shopping"
     assert entry.items[0].currency == "kr"
 
 
@@ -400,4 +399,32 @@ def test_decimal_amount_retries() -> None:
     # Then
     assert isinstance(entry, ExpenseEntry)
     assert entry.items[0].amount == 100
+    assert entry.items[0].currency == "kr"
+
+
+def test_spaces_in_income_description_retries() -> None:
+    # Given
+    input_manager = InputManager()
+
+    # Set country first
+    with patch("builtins.input", side_effect=["se"]):
+        input_manager.set_country()
+
+    test_inputs = [
+        "income",  # Entry type
+        "2024-03-21",  # Date
+        "Salary",  # Category
+        "Invalid Description",  # Invalid description with spaces
+        "monthly:salary",  # Valid description with colons
+        "25000",  # Amount
+        "n",  # No more items
+    ]
+
+    # When
+    with patch("builtins.input", side_effect=test_inputs):
+        entry = input_manager.capture_entry()
+
+    # Then
+    assert isinstance(entry, IncomeEntry)
+    assert entry.description == "monthly:salary"
     assert entry.items[0].currency == "kr"

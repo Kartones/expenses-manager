@@ -77,10 +77,7 @@ class InputManager:
         """
         while True:
             category = input("Enter category: ").strip()
-            if " " in category:
-                print("Category cannot contain spaces. Use colons (:) instead")
-            else:
-                return category
+            return category
 
     def _capture_description(self) -> str:
         """Capture and validate a description from user input.

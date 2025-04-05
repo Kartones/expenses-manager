@@ -49,8 +49,7 @@ class BaseEntry:
     account: str
 
     def __post_init__(self) -> None:
-        if " " in self.category:
-            raise InvalidDescriptionError("Category must use colons (:) instead of spaces")
+        pass  # No validation needed for category spaces
 
 
 @dataclass
