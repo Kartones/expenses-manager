@@ -23,8 +23,18 @@ else
     source .venv/bin/activate
 fi
 
-# Run the application, passing through any arguments
-python -m src.expenses.main "$@"
+# Check number of arguments
+if [ $# -gt 1 ]; then
+    echo "Error: At most one argument (data folder) can be provided"
+    exit 1
+fi
+
+# Set data folder and display message
+data_folder=${1:-.}
+echo "Running with data folder at $data_folder"
+
+# Run the application with the data folder
+python -m src.expenses.main "$data_folder"
 
 # Deactivate virtual environment
 deactivate
