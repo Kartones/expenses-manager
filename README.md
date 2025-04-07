@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/Kartones/expenses-manager/tree/main.svg?style=svg)](https://circleci.com/gh/Kartones/expenses-manager/tree/main)
+
 # Expenses Manager
 
 A simple command-line tool to track personal expenses and income. It uses a simplified version of the [Ledger](https://ledger-cli.org/doc/ledger3.html) format.
@@ -125,6 +127,7 @@ For income (Spain):
 ### Running Tests
 
 ```bash
+pip install -e .  # Install package in development mode
 python -m pytest tests/ -v
 ```
 
