@@ -10,8 +10,8 @@ def main() -> None:
     # Get DATA_DIR from command line argument or default to current directory
     data_dir = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
 
-    print("Welcome to the Expenses Manager!")
-    print("--------------------------------")
+    print("Expenses Manager")
+    print("----------------")
 
     input_manager = InputManager()
     input_manager.set_country()  # Get country selection at startup
@@ -27,7 +27,7 @@ def main() -> None:
 
             # Write to file
             file_manager.write_entry(data_dir, entry)
-            print("\nEntry saved successfully!")
+            print("\nEntry saved successfully")
 
             # Ask if user wants to continue
             if input("\nAdd another entry? (y/n): ").lower().strip() != "y":
@@ -40,8 +40,6 @@ def main() -> None:
             print(f"\nError: {str(e)}")
             if input("\nTry again? (y/n): ").lower().strip() != "y":
                 break
-
-    print("\nThank you for using Expenses Manager!")
 
 
 if __name__ == "__main__":

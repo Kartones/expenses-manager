@@ -76,7 +76,7 @@ class InputManager:
             A valid category string
         """
         while True:
-            category = input("Enter category: ").strip()
+            category = input("Enter entry category: ").strip()
             return category
 
     def _capture_description(self) -> str:
@@ -86,7 +86,7 @@ class InputManager:
             A valid description string
         """
         while True:
-            description = input("Enter description: ").strip()
+            description = input("Enter entry line description: ").strip()
             if " " in description:
                 print("Description cannot contain spaces. Use colons (:) instead")
             else:
