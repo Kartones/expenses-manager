@@ -54,7 +54,7 @@ class ExpensesManager:
                         [
                             date_str,
                             input("Category: "),
-                            input("Amount(s) (comma-separated for multiple): "),
+                            input("Amount: "),
                             input("Description: "),
                         ]
                     )

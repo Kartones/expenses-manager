@@ -72,3 +72,4 @@ Example:
 - Income-type entries always contain a last line with the entry line description.
 - There can be multiple Expense-type entries with the same date, as long as the category differs.
 - There should be at most one Income-type entry for a specific date.
+- Income entries can be merged with existing entries of the same date if they have the same description.
