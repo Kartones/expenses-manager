@@ -130,7 +130,7 @@ class TestCLI:
     def test_add_expense_missing_arguments(self, cli: CLI) -> None:
         """Test that missing arguments raise error."""
         with pytest.raises(TypeError):
-            cli.handle_add_expense(
+            cli.handle_add_expense(  # type: ignore[call-arg]
                 date_str="2024/03/21",
                 category="Shopping",
                 amount_str="100",
@@ -139,7 +139,7 @@ class TestCLI:
     def test_add_expense_extra_arguments(self, cli: CLI) -> None:
         """Test that extra arguments raise error."""
         with pytest.raises(TypeError):
-            cli.handle_add_expense(
+            cli.handle_add_expense(  # type: ignore[call-arg]
                 date_str="2024/03/21",
                 category="Shopping",
                 amount_str="100",
@@ -222,7 +222,7 @@ class TestCLI:
     def test_add_income_missing_arguments(self, cli: CLI) -> None:
         """Test that missing arguments raise error."""
         with pytest.raises(TypeError):
-            cli.handle_add_income(
+            cli.handle_add_income(  # type: ignore[call-arg]
                 date_str="2024/03/21",
                 category="Salary",
                 amount_str="1000",
@@ -231,7 +231,7 @@ class TestCLI:
     def test_add_income_extra_arguments(self, cli: CLI) -> None:
         """Test that extra arguments raise error."""
         with pytest.raises(TypeError):
-            cli.handle_add_income(
+            cli.handle_add_income(  # type: ignore[call-arg]
                 date_str="2024/03/21",
                 category="Salary",
                 amount_str="1000",

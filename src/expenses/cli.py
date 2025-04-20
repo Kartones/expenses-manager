@@ -1,7 +1,6 @@
 from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime, date
-from typing import Optional
 import argparse
 
 from src.expenses.input_manager import InputManager
@@ -44,28 +43,29 @@ class CLI:
     """Command Line Interface for the expenses manager."""
 
     input_manager: InputManager
-    repository: Optional[EntryRepository] = None
-    parser: Optional[argparse.ArgumentParser] = None
+    repository: EntryRepository | None = None
+    parser: argparse.ArgumentParser | None = None
 
     def __post_init__(self) -> None:
         """Initialize repository if not provided and setup argument parser."""
         if self.repository is None:
             self.repository = EntryRepository(data_dir=".", country_code=self.input_manager.country)
 
-        self.parser = argparse.ArgumentParser(
-            description="Expenses Manager - A CLI tool for managing expenses and income"
-        )
-        self.parser.add_argument(
-            "--data-dir",
-            type=str,
-            default=".",
-            help="Directory where data files are stored (default: current directory)",
-        )
-        self.parser.add_argument(
-            "--interactive",
-            action="store_true",
-            help="Run in interactive mode (default: True)",
-        )
+        if self.parser is None:
+            self.parser = argparse.ArgumentParser(
+                description="Expenses Manager - A CLI tool for managing expenses and income"
+            )
+            self.parser.add_argument(
+                "--data-dir",
+                type=str,
+                default=".",
+                help="Directory where data files are stored (default: current directory)",
+            )
+            self.parser.add_argument(
+                "--interactive",
+                action="store_true",
+                help="Run in interactive mode (default: True)",
+            )
 
     def parse_args(self) -> argparse.Namespace:
         """Parse command line arguments.
@@ -73,6 +73,8 @@ class CLI:
         Returns:
             Parsed command line arguments.
         """
+        if self.parser is None:
+            raise RuntimeError("Parser not initialized")
         return self.parser.parse_args()
 
     def parse_command(self, command: str) -> CommandType:
@@ -145,9 +147,13 @@ class CLI:
 
         Raises:
             ValueError: If any argument is invalid
+            RuntimeError: If repository is not initialized
         """
         entry_date = self._validate_date(date_str)
         amount = self._validate_amount(amount_str)
+
+        if self.repository is None:
+            raise RuntimeError("Repository not initialized")
 
         entry = Entry(
             entry_date=entry_date,
@@ -157,8 +163,7 @@ class CLI:
             lines=[EntryLine(amount=amount, description=description)],
         )
 
-        if self.repository:
-            self.repository.save_entry(entry)
+        self.repository.save_entry(entry)
 
     def handle_add_income(
         self,
@@ -177,9 +182,13 @@ class CLI:
 
         Raises:
             ValueError: If any argument is invalid
+            RuntimeError: If repository is not initialized
         """
         entry_date = self._validate_date(date_str)
         amount = self._validate_amount(amount_str)
+
+        if self.repository is None:
+            raise RuntimeError("Repository not initialized")
 
         entry = Entry(
             entry_date=entry_date,
@@ -189,8 +198,7 @@ class CLI:
             lines=[EntryLine(amount=amount, description=description)],
         )
 
-        if self.repository:
-            self.repository.save_entry(entry)
+        self.repository.save_entry(entry)
 
     def run(self) -> None:
         """Run the CLI in interactive mode."""

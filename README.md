@@ -108,8 +108,19 @@ python -m pytest tests/ -v
 ### Type Checking
 
 ```bash
-mypy src/ tests/
+# Activate virtual environment first
+source .venv/bin/activate  # Unix/macOS
+# or
+.venv\Scripts\activate    # Windows
+
+# Install dependencies if not already installed
+pip install -r requirements.txt
+
+# Run type checking
+mypy --explicit-package-bases src/ tests/
 ```
+
+The type checker helps catch potential type-related issues early. Make sure to fix any type errors before committing changes.
 
 ## Data Format
 
