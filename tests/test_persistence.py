@@ -316,3 +316,41 @@ class TestEntryRepository:
         # Act & Assert
         with pytest.raises(ValueError, match="Invalid currency EUR for country se. Expected SEK"):
             repository.validate_entries([entry])
+
+    def test_save_entry_automatically_merges_matching_entries(self, repository_se: EntryRepository) -> None:
+        """Test that save_entry automatically merges entries with same date and category."""
+        # Arrange
+        first_entry = Entry(
+            entry_date=date(2024, 3, 21),
+            category="Food",
+            entry_type=EntryType.EXPENSE,
+            currency="SEK",
+            lines=[EntryLine(amount=100, description="Food:Lunch")],
+        )
+        second_entry = Entry(
+            entry_date=date(2024, 3, 21),
+            category="Food",
+            entry_type=EntryType.EXPENSE,
+            currency="SEK",
+            lines=[EntryLine(amount=200, description="Food:Dinner")],
+        )
+        expected_content = (
+            "2024/03/21 Food\n"
+            "  Food:Lunch                             SEK 100\n"
+            "  Food:Dinner                            SEK 200\n"
+            "  * Assets:Checking\n"
+            "\n"
+        )
+        mock_file = mock_open()
+
+        # Act
+        with patch("builtins.open", mock_file):
+            with patch("os.path.exists", return_value=True):
+                # Mock reading the first entry when saving the second
+                with patch.object(repository_se, "read_entries", return_value=[first_entry]):
+                    repository_se.save_entry(second_entry)
+
+        # Assert
+        mock_file().write.assert_called_once()
+        written_content = "".join(mock_file().write.call_args_list[0][0])
+        assert written_content == expected_content

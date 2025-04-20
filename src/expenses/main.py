@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from src.expenses.cli import CLI
+from src.expenses.cli import CLI, CommandType
 from src.expenses.input_manager import InputManager
 from src.expenses.persistence import EntryRepository
 
@@ -30,7 +30,7 @@ class ExpensesManager:
             try:
                 today_str = datetime.now().strftime("%Y/%m/%d")
                 command_type = self.cli.parse_command(command)
-                if command_type == "ADD_EXPENSE":
+                if command_type == CommandType.ADD_EXPENSE:
                     # Get date with default to today
                     date_str = input(f"Enter date (YYYY/MM/DD) [{today_str}]: ").strip()
                     if not date_str:
@@ -44,7 +44,7 @@ class ExpensesManager:
                             input("Description: "),
                         ]
                     )
-                elif command_type == "ADD_INCOME":
+                elif command_type == CommandType.ADD_INCOME:
                     # Get date with default to today
                     date_str = input(f"Enter date (YYYY/MM/DD) [{today_str}]: ").strip()
                     if not date_str:

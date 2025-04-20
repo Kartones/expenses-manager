@@ -66,8 +66,31 @@ class EntryRepository:
                 if existing_income_entries:
                     raise ValueError("Cannot have multiple income entries for the same date")
 
-        # Add new entry
-        entries.append(entry)
+            # Check for entries that can be merged
+            for existing_entry in entries:
+                if (
+                    existing_entry.entry_date == entry.entry_date
+                    and existing_entry.category == entry.category
+                    and existing_entry.entry_type == entry.entry_type
+                    and existing_entry.currency == entry.currency
+                ):
+                    try:
+                        # Merge entries
+                        merged_entry = self.merge_entries(existing_entry, entry)
+                        # Remove old entry and add merged one
+                        entries.remove(existing_entry)
+                        entries.append(merged_entry)
+                        break
+                    except ValueError:
+                        # If merge fails (e.g. different descriptions for income), just add as new entry
+                        entries.append(entry)
+                        break
+            else:
+                # No matching entry found for merging
+                entries.append(entry)
+        else:
+            # No existing entries
+            entries.append(entry)
 
         # Sort and write all entries
         sorted_entries = self._sort_entries(entries)
