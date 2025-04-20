@@ -1,46 +1,72 @@
-import sys
-from pathlib import Path
+from datetime import datetime
 
-from expenses.file_manager import FileManager
-from expenses.input_manager import InputManager
+from src.expenses.cli import CLI
+from src.expenses.input_manager import InputManager
+from src.expenses.persistence import EntryRepository
 
 
-def main() -> None:
-    """Main entry point for the expenses CLI."""
-    # Get DATA_DIR from command line argument or default to current directory
-    data_dir = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
+class ExpensesManager:
+    """Main entry point for the expenses manager application."""
 
-    print("Expenses Manager")
-    print("----------------")
+    def __init__(self, data_dir: str = ".") -> None:
+        """Initialize the expenses manager.
 
-    input_manager = InputManager()
-    input_manager.set_country()  # Get country selection at startup
-    file_manager = FileManager(country=input_manager.country)
+        Args:
+            data_dir: Directory where data files are stored. Defaults to current directory.
+        """
+        self.data_dir = data_dir
+        self.input_manager = InputManager()
+        self.input_manager.set_country()
+        self.repository = EntryRepository(data_dir=data_dir, country_code=self.input_manager.country)
+        self.cli = CLI(input_manager=self.input_manager, repository=self.repository)
 
-    # Create data directory if it doesn't exist
-    data_dir.mkdir(parents=True, exist_ok=True)
-
-    while True:
-        try:
-            # Capture the entry
-            entry = input_manager.capture_entry()
-
-            # Write to file
-            file_manager.write_entry(data_dir, entry)
-            print("\nEntry saved successfully")
-
-            # Ask if user wants to continue
-            if input("\nAdd another entry? (y/n): ").lower().strip() != "y":
+    def run_interactive(self) -> None:
+        """Run the application in interactive mode."""
+        while True:
+            command = input("Enter command (expense/e, income/i, quit/q): ").strip().lower()
+            if command in ["q", "quit"]:
                 break
 
-        except KeyboardInterrupt:
-            print("\nOperation cancelled.")
-            break
-        except Exception as e:
-            print(f"\nError: {str(e)}")
-            if input("\nTry again? (y/n): ").lower().strip() != "y":
-                break
+            try:
+                today_str = datetime.now().strftime("%Y/%m/%d")
+                command_type = self.cli.parse_command(command)
+                if command_type == "ADD_EXPENSE":
+                    # Get date with default to today
+                    date_str = input(f"Enter date (YYYY/MM/DD) [{today_str}]: ").strip()
+                    if not date_str:
+                        date_str = today_str
+
+                    self.cli.handle_add_expense(
+                        [
+                            date_str,
+                            input("Category: "),
+                            input("Amount: "),
+                            input("Description: "),
+                        ]
+                    )
+                elif command_type == "ADD_INCOME":
+                    # Get date with default to today
+                    date_str = input(f"Enter date (YYYY/MM/DD) [{today_str}]: ").strip()
+                    if not date_str:
+                        date_str = today_str
+
+                    self.cli.handle_add_income(
+                        [
+                            date_str,
+                            input("Category: "),
+                            input("Amount(s) (comma-separated for multiple): "),
+                            input("Description: "),
+                        ]
+                    )
+            except ValueError as e:
+                print(f"Error: {e}")
+            except Exception as e:
+                print(f"Unexpected error: {e}")
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    data_dir = sys.argv[1] if len(sys.argv) > 1 else "."
+    manager = ExpensesManager(data_dir)
+    manager.run_interactive()

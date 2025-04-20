@@ -1,1 +1,3 @@
- 
+"""
+Expenses Manager package.
+"""

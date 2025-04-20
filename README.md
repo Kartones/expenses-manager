@@ -2,20 +2,18 @@
 
 # Expenses Manager
 
-A simple command-line tool to track personal expenses and income. It uses a simplified version of the [Ledger](https://ledger-cli.org/doc/ledger3.html) format.
+A simple command-line tool to track personal expenses and income. It uses a simplified version of the [Ledger](https://ledger-cli.org/doc/ledger3.html) format. Check [the specs](specs/data-format.md) for more details.
 
 ⚠️ This is a Vibe-coding experiment: 100% AI-built via prompting, excepting this README's introduction. ⚠️
 
-
 ## Features
 
-- Track both expenses and income entries
-- Support for multiple items per entry
-- Automatic file organization by month
+- Track both expenses and income
+- Support for multiple currencies (EUR for Spain, SEK for Sweden)
+- Automatic file organization by country and month
+- Interactive command-line interface
+- Automatic entry merging for same date/category
 - Input validation and error handling
-- Simple text-based file format
-- Multi-country support (Spain/Sweden) with automatic currency selection
-- Automatic currency handling (€ for Spain, kr for Sweden)
 
 ## Requirements
 
@@ -28,106 +26,83 @@ A simple command-line tool to track personal expenses and income. It uses a simp
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd finances
+   cd expenses-manager
    ```
 
-2. Create and activate a virtual environment:
+2. Run the application using the provided script:
    ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Unix/macOS
-   # or
-   .venv\Scripts\activate  # On Windows
+   ./run.sh [data_dir]
    ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+   The script will:
+   - Create a virtual environment if not present
+   - Install dependencies
+   - Run the application
+   - Clean up when done
 
 ## Usage
 
-### Quick Start
-Run the application using the provided shell script:
-```bash
-./run.sh [data_dir]
-```
-This script will:
-- Create virtual environment if not present
-- Install dependencies if needed
-- Run the application with the specified data directory (defaults to current directory)
-- Clean up when done
+### Commands
 
-### Manual Setup
-1. Run the application:
-   ```bash
-   python -m src.expenses.main [data_dir]
-   ```
-   The optional `data_dir` argument specifies where expense/income files will be stored (defaults to current directory).
+- `expense` or `e`: Add a new expense entry
+- `income` or `i`: Add a new income entry
+- `quit` or `q`: Exit the application
 
-2. Follow the interactive prompts:
-   - Select country (es/se) at startup [defaults to se]
-   - Choose entry type: expense (E) or income (I)
-   - Enter date in YYYY-MM-DD format [defaults to today]
-   - Enter category (use colons instead of spaces)
-   - For expenses: enter description and amount
-   - For income: enter description and amount
-   - Optionally add multiple items
-   - Choose whether to add another entry
+### Data Entry
 
-### Example Expense Entry (Sweden)
+For both expense and income entries:
+- Date: YYYY/MM/DD format (defaults to today if empty)
+- Category: Words separated by colons (e.g., "Food:Groceries")
+- Description: Words separated by colons (e.g., "Weekly:Shopping")
+- Amount: Positive integer values
+
+### Special Features
+
+- **Multiple Income Amounts**: For income entries, you can enter multiple amounts separated by commas
+- **Automatic Entry Merging**: If you add an entry with the same date and category as an existing one:
+  - For expenses: The new entry lines are added to the existing entry
+  - For income: The new amounts are added if the description matches
+
+### Example: Adding an Expense
 
 ```
-Enter country (es/se) [se]: se
-Enter entry type: expense (E) or income (I): e
-Enter date (YYYY-MM-DD) [2024-03-21]:
-Enter category: Shopping
-Enter description: weekly:groceries
-Enter amount (integer): 100
-Add another item? (y/n): n
-Add another entry? (y/n): n
+Enter command (expense/e, income/i, quit/q): e
+Enter date (YYYY/MM/DD) [2024/03/21]: 2024/03/21
+Category: Food:Groceries
+Amount: 150
+Description: Weekly:Shopping
+
+Entry saved successfully!
 ```
 
-### Example Income Entry (Spain)
+### Example: Adding Income with Multiple Amounts
 
 ```
-Enter country (es/se) [se]: es
-Enter entry type: expense (E) or income (I): i
-Enter date (YYYY-MM-DD) [2024-03-21]:
-Enter category: Salary
-Enter description: monthly:salary
-Enter amount (integer): 25000
-Add another item? (y/n): n
-Add another entry? (y/n): n
+Enter command (expense/e, income/i, quit/q): income
+Enter date (YYYY/MM/DD) [2024/03/21]: 2024/03/25
+Category: Salary
+Amount(s) (comma-separated for multiple): 2000,500
+Description: Monthly:Salary
+
+Entry saved successfully!
 ```
 
-## Configuration
+### File Organization
 
-The application stores expense/income files in the specified data directory (defaults to current directory if not provided).
-
-## File Format
-
-Entries are stored in monthly files named `{country}-YYYY-MM.dat` in the specified data directory, where `country` is either `es` or `se`. The file format is:
-
-For expenses (Sweden):
-```
-2024/03/21 Shopping
-  weekly:groceries                     kr 100
-  * Assets:Checking
-```
-
-For income (Spain):
-```
-2024/03/21 Salary
-  * Assets:Checking                    € 25000
-  monthly:salary
-```
+The application automatically organizes entries in files following this pattern:
+- Spain (EUR): `es-YYYY-MM.dat`
+- Sweden (SEK): `se-YYYY-MM.dat`
 
 ## Development
 
 ### Running Tests
 
 ```bash
-pip install -e .  # Install package in development mode
+# Activate virtual environment
+source .venv/bin/activate  # Unix/macOS
+# or
+.venv\Scripts\activate    # Windows
+
+# Run tests
 python -m pytest tests/ -v
 ```
 
@@ -137,10 +112,6 @@ python -m pytest tests/ -v
 mypy src/ tests/
 ```
 
-## Contributing
+## Data Format
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and type checking
-5. Submit a pull request
+For detailed information about the data format and validation rules, see [specs/data-format.md](specs/data-format.md).
