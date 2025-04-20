@@ -36,13 +36,15 @@ class ExpensesManager:
                     if not date_str:
                         date_str = today_str
 
+                    category = input("Category: ").strip()
+                    amount = input("Amount: ").strip()
+                    description = input("Description: ").strip()
+
                     self.cli.handle_add_expense(
-                        [
-                            date_str,
-                            input("Category: "),
-                            input("Amount: "),
-                            input("Description: "),
-                        ]
+                        date_str=date_str,
+                        category=category,
+                        amount_str=amount,
+                        description=description,
                     )
                 elif command_type == CommandType.ADD_INCOME:
                     # Get date with default to today
@@ -50,13 +52,15 @@ class ExpensesManager:
                     if not date_str:
                         date_str = today_str
 
+                    category = input("Category: ").strip()
+                    amount = input("Amount: ").strip()
+                    description = input("Description: ").strip()
+
                     self.cli.handle_add_income(
-                        [
-                            date_str,
-                            input("Category: "),
-                            input("Amount: "),
-                            input("Description: "),
-                        ]
+                        date_str=date_str,
+                        category=category,
+                        amount_str=amount,
+                        description=description,
                     )
             except ValueError as e:
                 print(f"Error: {e}")
