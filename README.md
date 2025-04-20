@@ -57,10 +57,9 @@ For both expense and income entries:
 
 ### Special Features
 
-- **Multiple Income Amounts**: For income entries, you can enter multiple amounts separated by commas
 - **Automatic Entry Merging**: If you add an entry with the same date and category as an existing one:
   - For expenses: The new entry lines are added to the existing entry
-  - For income: The new amounts are added if the description matches
+  - For income: The new amount is added if the description matches (only one income entry per date allowed)
 
 ### Example: Adding an Expense
 
@@ -74,13 +73,13 @@ Description: Weekly:Shopping
 Entry saved successfully!
 ```
 
-### Example: Adding Income with Multiple Amounts
+### Example: Adding Income
 
 ```
 Enter command (expense/e, income/i, quit/q): income
 Enter date (YYYY/MM/DD) [2024/03/21]: 2024/03/25
 Category: Salary
-Amount(s) (comma-separated for multiple): 2000,500
+Amount: 2000
 Description: Monthly:Salary
 
 Entry saved successfully!

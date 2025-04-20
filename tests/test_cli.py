@@ -4,7 +4,8 @@ import pytest
 
 from src.expenses.cli import CLI, CommandType
 from src.expenses.input_manager import InputManager
-from src.expenses.models import EntryType
+from src.expenses.models import EntryType, Entry, EntryLine
+from src.expenses.persistence import EntryRepository
 
 
 class TestCLI:
@@ -24,6 +25,27 @@ class TestCLI:
     def mock_repository(self) -> Mock:
         """Create a mock repository for testing."""
         return Mock()
+
+    @pytest.fixture
+    def income_entry(self) -> Entry:
+        """Create a sample income entry for testing."""
+        return Entry(
+            entry_date=date(2024, 3, 21),
+            category="Salary",
+            entry_type=EntryType.INCOME,
+            currency="EUR",
+            lines=[EntryLine(amount=1000, description="Salary:Monthly")],
+        )
+
+    @pytest.fixture
+    def repository_se(self) -> EntryRepository:
+        """Create a repository instance for Swedish entries."""
+        return EntryRepository(data_dir=".", country_code="se")
+
+    @pytest.fixture
+    def repository_es(self) -> EntryRepository:
+        """Create a repository instance for Spanish entries."""
+        return EntryRepository(data_dir=".", country_code="es")
 
     def test_cli_initialization(self, cli: CLI, input_manager: InputManager) -> None:
         """Test that CLI is properly initialized with an InputManager."""
@@ -55,10 +77,14 @@ class TestCLI:
         """Test adding an expense entry with a single line."""
         # Arrange
         cli.repository = mock_repository
-        args = ["2024/03/21", "Shopping", "100", "Food:Groceries"]
 
         # Act
-        cli.handle_add_expense(args)
+        cli.handle_add_expense(
+            date_str="2024/03/21",
+            category="Shopping",
+            amount_str="100",
+            description="Food:Groceries",
+        )
 
         # Assert
         mock_repository.save_entry.assert_called_once()
@@ -74,50 +100,83 @@ class TestCLI:
     def test_add_expense_invalid_date_format(self, cli: CLI) -> None:
         """Test that invalid date format raises error."""
         with pytest.raises(ValueError, match="Invalid date format. Use YYYY/MM/DD"):
-            cli.handle_add_expense(["2024-03-21", "Shopping", "100", "Food:Groceries"])
+            cli.handle_add_expense(
+                date_str="2024-03-21",
+                category="Shopping",
+                amount_str="100",
+                description="Food:Groceries",
+            )
 
     def test_add_expense_invalid_amount(self, cli: CLI) -> None:
         """Test that non-numeric amount raises error."""
         with pytest.raises(ValueError, match="Amount must be a positive number"):
-            cli.handle_add_expense(["2024/03/21", "Shopping", "abc", "Food:Groceries"])
+            cli.handle_add_expense(
+                date_str="2024/03/21",
+                category="Shopping",
+                amount_str="abc",
+                description="Food:Groceries",
+            )
 
     def test_add_expense_negative_amount(self, cli: CLI) -> None:
         """Test that negative amount raises error."""
         with pytest.raises(ValueError, match="Amount must be a positive number"):
-            cli.handle_add_expense(["2024/03/21", "Shopping", "-100", "Food:Groceries"])
+            cli.handle_add_expense(
+                date_str="2024/03/21",
+                category="Shopping",
+                amount_str="-100",
+                description="Food:Groceries",
+            )
 
     def test_add_expense_missing_arguments(self, cli: CLI) -> None:
         """Test that missing arguments raise error."""
-        with pytest.raises(ValueError, match="Usage: add-expense <date> <category> <amount> <description>"):
-            cli.handle_add_expense(["2024/03/21", "Shopping", "100"])
+        with pytest.raises(TypeError):
+            cli.handle_add_expense(
+                date_str="2024/03/21",
+                category="Shopping",
+                amount_str="100",
+            )
 
     def test_add_expense_extra_arguments(self, cli: CLI) -> None:
         """Test that extra arguments raise error."""
-        with pytest.raises(ValueError, match="Usage: add-expense <date> <category> <amount> <description>"):
-            cli.handle_add_expense(["2024/03/21", "Shopping", "100", "Food:Groceries", "extra"])
+        with pytest.raises(TypeError):
+            cli.handle_add_expense(
+                date_str="2024/03/21",
+                category="Shopping",
+                amount_str="100",
+                description="Food:Groceries",
+                extra="extra",
+            )
 
     def test_add_expense_with_spaces_in_category(self, cli: CLI, mock_repository: Mock) -> None:
         """Test that category can contain spaces."""
         # Arrange
         cli.repository = mock_repository
-        args = ["2024/03/21", "Food and Drinks", "100", "Food:Groceries"]
 
         # Act
-        cli.handle_add_expense(args)
+        cli.handle_add_expense(
+            date_str="2024/03/21",
+            category="Food and Drinks",
+            amount_str="100",
+            description="Food:Groceries",
+        )
 
         # Assert
         mock_repository.save_entry.assert_called_once()
         saved_entry = mock_repository.save_entry.call_args[0][0]
         assert saved_entry.category == "Food and Drinks"
 
-    def test_add_income_command_single_line(self, cli: CLI, mock_repository: Mock) -> None:
-        """Test adding an income entry with a single line."""
+    def test_add_income_command(self, cli: CLI, mock_repository: Mock) -> None:
+        """Test adding an income entry."""
         # Arrange
         cli.repository = mock_repository
-        args = ["2024/03/21", "Salary", "1000", "Salary:Monthly"]
 
         # Act
-        cli.handle_add_income(args)
+        cli.handle_add_income(
+            date_str="2024/03/21",
+            category="Salary",
+            amount_str="1000",
+            description="Salary:Monthly",
+        )
 
         # Assert
         mock_repository.save_entry.assert_called_once()
@@ -130,61 +189,68 @@ class TestCLI:
         assert saved_entry.lines[0].amount == 1000
         assert saved_entry.lines[0].description == "Salary:Monthly"
 
-    def test_add_income_command_multiple_lines(self, cli: CLI, mock_repository: Mock) -> None:
-        """Test adding an income entry with multiple lines with same description."""
-        # Arrange
-        cli.repository = mock_repository
-        args = ["2024/03/21", "Salary", "1000,500", "Salary:Monthly"]
-
-        # Act
-        cli.handle_add_income(args)
-
-        # Assert
-        mock_repository.save_entry.assert_called_once()
-        saved_entry = mock_repository.save_entry.call_args[0][0]
-        assert saved_entry.entry_date == date(2024, 3, 21)
-        assert saved_entry.category == "Salary"
-        assert saved_entry.entry_type == EntryType.INCOME
-        assert saved_entry.currency == "SEK"
-        assert len(saved_entry.lines) == 2
-        assert saved_entry.lines[0].amount == 1000
-        assert saved_entry.lines[0].description == "Salary:Monthly"
-        assert saved_entry.lines[1].amount == 500
-        assert saved_entry.lines[1].description == "Salary:Monthly"
-
     def test_add_income_invalid_date_format(self, cli: CLI) -> None:
         """Test that invalid date format raises error."""
         with pytest.raises(ValueError, match="Invalid date format. Use YYYY/MM/DD"):
-            cli.handle_add_income(["2024-03-21", "Salary", "1000", "Salary:Monthly"])
+            cli.handle_add_income(
+                date_str="2024-03-21",
+                category="Salary",
+                amount_str="1000",
+                description="Salary:Monthly",
+            )
 
     def test_add_income_invalid_amount(self, cli: CLI) -> None:
         """Test that non-numeric amount raises error."""
         with pytest.raises(ValueError, match="Amount must be a positive number"):
-            cli.handle_add_income(["2024/03/21", "Salary", "abc", "Salary:Monthly"])
+            cli.handle_add_income(
+                date_str="2024/03/21",
+                category="Salary",
+                amount_str="abc",
+                description="Salary:Monthly",
+            )
 
     def test_add_income_negative_amount(self, cli: CLI) -> None:
         """Test that negative amount raises error."""
         with pytest.raises(ValueError, match="Amount must be a positive number"):
-            cli.handle_add_income(["2024/03/21", "Salary", "-100", "Salary:Monthly"])
+            cli.handle_add_income(
+                date_str="2024/03/21",
+                category="Salary",
+                amount_str="-100",
+                description="Salary:Monthly",
+            )
 
     def test_add_income_missing_arguments(self, cli: CLI) -> None:
         """Test that missing arguments raise error."""
-        with pytest.raises(ValueError, match="Usage: add-income <date> <category> <amount> <description>"):
-            cli.handle_add_income(["2024/03/21", "Salary", "1000"])
+        with pytest.raises(TypeError):
+            cli.handle_add_income(
+                date_str="2024/03/21",
+                category="Salary",
+                amount_str="1000",
+            )
 
     def test_add_income_extra_arguments(self, cli: CLI) -> None:
         """Test that extra arguments raise error."""
-        with pytest.raises(ValueError, match="Usage: add-income <date> <category> <amount> <description>"):
-            cli.handle_add_income(["2024/03/21", "Salary", "1000", "Salary:Monthly", "extra"])
+        with pytest.raises(TypeError):
+            cli.handle_add_income(
+                date_str="2024/03/21",
+                category="Salary",
+                amount_str="1000",
+                description="Salary:Monthly",
+                extra="extra",
+            )
 
     def test_add_income_with_spaces_in_category(self, cli: CLI, mock_repository: Mock) -> None:
         """Test that category can contain spaces."""
         # Arrange
         cli.repository = mock_repository
-        args = ["2024/03/21", "Monthly Salary", "1000", "Salary:Monthly"]
 
         # Act
-        cli.handle_add_income(args)
+        cli.handle_add_income(
+            date_str="2024/03/21",
+            category="Monthly Salary",
+            amount_str="1000",
+            description="Salary:Monthly",
+        )
 
         # Assert
         mock_repository.save_entry.assert_called_once()

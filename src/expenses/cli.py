@@ -1,7 +1,7 @@
 from enum import Enum
 from dataclasses import dataclass
-from datetime import datetime
-from typing import List, Optional
+from datetime import datetime, date
+from typing import Optional
 import argparse
 
 from src.expenses.input_manager import InputManager
@@ -89,35 +89,65 @@ class CLI:
         """
         return CommandType.from_string(command)
 
-    def handle_add_expense(self, args: List[str]) -> None:
-        """Handle the add-expense command.
+    def _validate_date(self, date_str: str) -> date:
+        """Validate and parse a date string.
 
         Args:
-            args: List of command arguments [date, category, amount, description]
+            date_str: Date string in YYYY/MM/DD format
+
+        Returns:
+            Parsed date object
 
         Raises:
-            ValueError: If the arguments are invalid
+            ValueError: If the date format is invalid
         """
-        if len(args) != 4:
-            raise ValueError("Usage: add-expense <date> <category> <amount> <description>")
-
         try:
-            entry_date = datetime.strptime(args[0], "%Y/%m/%d").date()
+            return datetime.strptime(date_str, "%Y/%m/%d").date()
         except ValueError:
             raise ValueError("Invalid date format. Use YYYY/MM/DD")
 
-        category = args[1]
+    def _validate_amount(self, amount_str: str) -> int:
+        """Validate and parse an amount string.
 
+        Args:
+            amount_str: Amount string to validate
+
+        Returns:
+            Parsed positive integer amount
+
+        Raises:
+            ValueError: If the amount is invalid or not positive
+        """
         try:
-            amount = int(args[2])
+            amount = int(amount_str)
             if amount <= 0:
                 raise ValueError("Amount must be a positive number")
+            return amount
         except ValueError as e:
             if "invalid literal for int()" in str(e):
                 raise ValueError("Amount must be a positive number")
             raise
 
-        description = args[3]
+    def handle_add_expense(
+        self,
+        date_str: str,
+        category: str,
+        amount_str: str,
+        description: str,
+    ) -> None:
+        """Handle the add-expense command.
+
+        Args:
+            date_str: Date in YYYY/MM/DD format
+            category: Entry category
+            amount_str: Amount as string (must be positive integer)
+            description: Entry description
+
+        Raises:
+            ValueError: If any argument is invalid
+        """
+        entry_date = self._validate_date(date_str)
+        amount = self._validate_amount(amount_str)
 
         entry = Entry(
             entry_date=entry_date,
@@ -130,51 +160,33 @@ class CLI:
         if self.repository:
             self.repository.save_entry(entry)
 
-    def handle_add_income(self, args: List[str]) -> None:
+    def handle_add_income(
+        self,
+        date_str: str,
+        category: str,
+        amount_str: str,
+        description: str,
+    ) -> None:
         """Handle the add-income command.
 
         Args:
-            args: List of command arguments [date, category, amounts, description]
-            amounts can be a single number or comma-separated numbers for multiple lines
+            date_str: Date in YYYY/MM/DD format
+            category: Entry category
+            amount_str: Amount as string (must be positive integer)
+            description: Entry description
 
         Raises:
-            ValueError: If the arguments are invalid
+            ValueError: If any argument is invalid
         """
-        if len(args) != 4:
-            raise ValueError("Usage: add-income <date> <category> <amount> <description>")
-
-        try:
-            entry_date = datetime.strptime(args[0], "%Y/%m/%d").date()
-        except ValueError:
-            raise ValueError("Invalid date format. Use YYYY/MM/DD")
-
-        category = args[1]
-
-        # Handle multiple amounts
-        amounts_str = args[2].split(",")
-        amounts: List[int] = []
-        for amount_str in amounts_str:
-            try:
-                amount = int(amount_str)
-                if amount <= 0:
-                    raise ValueError("Amount must be a positive number")
-                amounts.append(amount)
-            except ValueError as e:
-                if "invalid literal for int()" in str(e):
-                    raise ValueError("Amount must be a positive number")
-                raise
-
-        description = args[3]
-
-        # Create entry lines with the same description
-        lines = [EntryLine(amount=amount, description=description) for amount in amounts]
+        entry_date = self._validate_date(date_str)
+        amount = self._validate_amount(amount_str)
 
         entry = Entry(
             entry_date=entry_date,
             category=category,
             entry_type=EntryType.INCOME,
             currency=VALID_COUNTRY_CURRENCIES[self.input_manager.country],
-            lines=lines,
+            lines=[EntryLine(amount=amount, description=description)],
         )
 
         if self.repository:
@@ -209,15 +221,18 @@ class CLI:
                             "Missing required fields. Please provide date, category, amount and description."
                         )
 
-                    args = parts[:3] + [" ".join(parts[3:])]
-                    self.handle_add_expense(args)
+                    self.handle_add_expense(
+                        date_str=parts[0],
+                        category=parts[1],
+                        amount_str=parts[2],
+                        description=" ".join(parts[3:]),
+                    )
                     print("✓ Expense added successfully")
 
                 elif command_type == CommandType.ADD_INCOME:
                     print("\nAdding income:")
                     print("Format: YYYY/MM/DD category amount description")
-                    print("Example: 2024/03/15 salary 5000 Monthly salary")
-                    print("For multiple amounts use commas: 1000,2000,3000\n")
+                    print("Example: 2024/03/15 salary 5000 Monthly salary\n")
 
                     raw_input = input("Enter details > ")
                     # Split by space, but rejoin the description parts
@@ -227,8 +242,12 @@ class CLI:
                             "Missing required fields. Please provide date, category, amount and description."
                         )
 
-                    args = parts[:3] + [" ".join(parts[3:])]
-                    self.handle_add_income(args)
+                    self.handle_add_income(
+                        date_str=parts[0],
+                        category=parts[1],
+                        amount_str=parts[2],
+                        description=" ".join(parts[3:]),
+                    )
                     print("✓ Income added successfully")
 
             except ValueError as e:

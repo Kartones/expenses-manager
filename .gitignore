@@ -38,5 +38,5 @@ dmypy.json
 .DS_Store
 Thumbs.db
 
-# Local configuration
-src/expenses/config.py
+# Application specific
+*.dat  # Expense/Income data files
