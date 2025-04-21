@@ -16,9 +16,13 @@ class EntryRepository:
             os.makedirs(data_dir)
 
     def get_filename_for_entry(self, entry: Entry) -> str:
-        """Generate the filename for an entry based on its date and currency."""
+        """Generate the base filename for an entry based on its date and currency."""
         country_code = "se" if entry.currency == "SEK" else "es"
         return f"{country_code}-{entry.entry_date.year}-{entry.entry_date.month:02d}.dat"
+
+    def _get_filepath_for_entry(self, entry: Entry) -> str:
+        """Get the full file path for an entry."""
+        return os.path.join(self.data_dir, self.get_filename_for_entry(entry))
 
     def format_entry(self, entry: Entry) -> str:
         """Format an entry for writing to file."""
@@ -44,6 +48,7 @@ class EntryRepository:
     def save_entry(self, entry: Entry) -> None:
         """Save an entry to its corresponding file, maintaining date order."""
         filename = self.get_filename_for_entry(entry)
+        filepath = self._get_filepath_for_entry(entry)
         country_code = filename[:2]
         expected_currency = VALID_COUNTRY_CURRENCIES.get(country_code)
         if not expected_currency or entry.currency != expected_currency:
@@ -51,8 +56,8 @@ class EntryRepository:
 
         # Read existing entries if file exists
         entries = []
-        if os.path.exists(filename):
-            entries = self.read_entries(filename)
+        if os.path.exists(filepath):
+            entries = self.read_entries(filepath)
 
             # For income entries, check if there's already an entry for this date
             if entry.entry_type == EntryType.INCOME:
@@ -94,7 +99,7 @@ class EntryRepository:
 
         # Sort and write all entries
         sorted_entries = self._sort_entries(entries)
-        self._write_entries(sorted_entries, filename)
+        self._write_entries(sorted_entries, filepath)
 
     def save_entries(self, entries: List[Entry]) -> None:
         """Save multiple entries to a file, ensuring date order."""
@@ -105,24 +110,24 @@ class EntryRepository:
         self.validate_entries(entries)
 
         # Sort entries and write
-        filename = self.get_filename_for_entry(entries[0])
+        filepath = self._get_filepath_for_entry(entries[0])
         sorted_entries = self._sort_entries(entries)
-        self._write_entries(sorted_entries, filename)
+        self._write_entries(sorted_entries, filepath)
 
-    def _write_entries(self, entries: List[Entry], filename: str) -> None:
+    def _write_entries(self, entries: List[Entry], filepath: str) -> None:
         """Write entries to a file, overwriting existing content."""
         content = []
         for entry in entries:
             content.append(self.format_entry(entry))
-        with open(filename, "w") as f:
+        with open(filepath, "w") as f:
             f.write("".join(content))
 
-    def read_entries(self, filename: str) -> List[Entry]:
+    def read_entries(self, filepath: str) -> List[Entry]:
         """Read all entries from a file."""
         entries: List[Entry] = []
         current_entry_lines: List[str] = []
 
-        with open(filename) as f:
+        with open(filepath) as f:
             for line in f:
                 line = line.rstrip()
 

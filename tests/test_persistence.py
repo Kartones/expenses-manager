@@ -1,6 +1,7 @@
 from datetime import date
 from unittest.mock import mock_open, patch
 import pytest
+import os
 
 from src.expenses.models import Entry, EntryLine, EntryType
 from src.expenses.persistence import EntryRepository
@@ -112,7 +113,7 @@ class TestEntryRepository:
                 repository_se.save_entry(expense_entry)
 
         # Assert
-        mock_file.assert_called_once_with("se-2024-03.dat", "w")
+        mock_file.assert_called_once_with(os.path.join(".", "se-2024-03.dat"), "w")
         mock_file().write.assert_called_once_with(repository_se.format_entry(expense_entry))
 
     def test_save_entry_maintains_order_with_existing_entries(
