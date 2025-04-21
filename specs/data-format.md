@@ -1,3 +1,5 @@
+Spec version: 1.3
+
 # Entry Definition
 
 - Each entry always contains a date (YYYY/MM/DD). e.g., `2025/04/01`.
@@ -9,7 +11,7 @@
 # Entry Line Definition
 
 - Each entry line always refers to the same currency as its parent Entry. e.g., `SEK`.
-- Each entry line always contains an integer, positive and greater than 0 amount, e.g., `100`.
+- Each entry line always contains an integer, positive and greater or equal to 0 amount, e.g., `100`.
 - Each entry line always contains a description. The description cannot contain spaces, using instead colons (`:`) to separate multiple words. e.g., `Expenses:Shopping:Food`.
   - If the parent entry is of type Income, all the entry lines inside it must have the exact same description. Otherwhise they would need to go in separate entries.
   - If the parent entry is of type Expense, each entry line can have a different description.
@@ -23,7 +25,7 @@
 - There is one file per country, year, and month, with extension `.dat`. Format is `<country>-YYYY-MM.dat`, e.g. `se-2025-04.dat`.
 - The file country defines the currency of entreies contained in it. e.g., `se-` file -> `SEK` currency, `es-` file -> `EUR` currency.
 - Each file can contain [1, N] entries.
-- Entries insie a file are ordered by date descending (entries with newer dates will be last in the file).
+- Entries insie a file are ordered by date ascending (entries with newer dates will be last in the file).
 - Each entry can be of either type: Expense or Income.
 - Each entry follows the entry definition.
 - Each entry line follows the entry line definition.
@@ -41,6 +43,12 @@ Example:
 2025/04/05 Base & Recurring
   Expenses:House:Mortage                 EUR 300
   Expenses:House:Electricity             EUR 20
+  * Assets:Checking
+
+Example with zero amount:
+```
+2025/04/05 Base & Recurring
+  Expenses:House:PendingBill             EUR 0
   * Assets:Checking
 
 ```
@@ -64,6 +72,12 @@ Example:
   * Assets:Checking                      € 500
   Income:Employer:SalaryAndBonus
 
+Example with zero amount:
+```
+2025/04/05 Employer
+  * Assets:Checking                      € 0
+  Income:Employer:PendingBonus
+
 ```
 - After an entry, there is always a blank line.
 - Income-type entries always contain per line: `* Assets:Checking`, then the currency and then the amount.
@@ -73,3 +87,9 @@ Example:
 - There can be multiple Expense-type entries with the same date, as long as the category differs.
 - There should be at most one Income-type entry for a specific date.
 - Income entries can be merged with existing entries of the same date if they have the same description.
+
+- A `.dat` file might contain comments, which have the following format:
+  - [0,N] optional leading whitespace (spaces, tabs, and the like)
+  - A semicolon `;`, followed by the comment itself (a free-form string)
+  - Always single-line
+  - Can appear before an entry, before entry lines, or before other comments

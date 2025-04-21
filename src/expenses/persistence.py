@@ -138,6 +138,10 @@ class EntryRepository:
                         current_entry_lines = []
                     continue
 
+                # Skip comment lines
+                if line.lstrip().startswith(";"):
+                    continue
+
                 current_entry_lines.append(line)
 
             # Handle last entry if file doesn't end with empty line
@@ -189,11 +193,14 @@ class EntryRepository:
                 )
 
     def _sort_entries(self, entries: List[Entry]) -> List[Entry]:
-        """Sort entries by date in descending order."""
-        return sorted(entries, key=lambda e: e.entry_date, reverse=True)
+        """Sort entries by date in ascending order."""
+        return sorted(entries, key=lambda e: e.entry_date)
 
     def _parse_entry(self, lines: List[str]) -> Entry:
         """Parse an entry from its lines."""
+        # Filter out comment lines
+        lines = [line for line in lines if not line.lstrip().startswith(";")]
+
         if not lines:
             raise ValueError("Empty entry")
 

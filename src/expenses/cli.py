@@ -115,19 +115,19 @@ class CLI:
             amount_str: Amount string to validate
 
         Returns:
-            Parsed positive integer amount
+            Parsed non-negative integer amount
 
         Raises:
-            ValueError: If the amount is invalid or not positive
+            ValueError: If the amount is invalid or negative
         """
         try:
             amount = int(amount_str)
-            if amount <= 0:
-                raise ValueError("Amount must be a positive number")
+            if amount < 0:
+                raise ValueError("Amount must be greater than or equal to 0")
             return amount
         except ValueError as e:
             if "invalid literal for int()" in str(e):
-                raise ValueError("Amount must be a positive number")
+                raise ValueError("Amount must be a valid number")
             raise
 
     def handle_add_expense(

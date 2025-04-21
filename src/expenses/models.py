@@ -36,8 +36,8 @@ class EntryLine:
 
     def __post_init__(self) -> None:
         """Validate the entry line after initialization."""
-        if self.amount <= 0:
-            raise InvalidEntryLineError("Amount must be positive")
+        if self.amount < 0:
+            raise InvalidEntryLineError("Amount must be greater than or equal to 0")
 
         if not self.description:
             raise InvalidEntryLineError("Description cannot be empty")

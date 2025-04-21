@@ -19,12 +19,14 @@ class TestEntryLine:
         assert entry_line.description == description
 
     def test_invalid_amount_raises_error(self) -> None:
-        """Test that negative or zero amounts raise an error."""
-        with pytest.raises(InvalidEntryLineError, match="Amount must be positive"):
-            EntryLine(amount=0, description="Test")
-
-        with pytest.raises(InvalidEntryLineError, match="Amount must be positive"):
+        """Test that negative amounts raise an error."""
+        with pytest.raises(InvalidEntryLineError, match="Amount must be greater than or equal to 0"):
             EntryLine(amount=-100, description="Test")
+
+    def test_zero_amount_is_valid(self) -> None:
+        """Test that zero amount is valid."""
+        entry_line = EntryLine(amount=0, description="Test")
+        assert entry_line.amount == 0
 
     def test_invalid_description_format_raises_error(self) -> None:
         """Test that descriptions with spaces raise an error."""

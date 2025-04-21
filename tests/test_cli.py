@@ -109,7 +109,7 @@ class TestCLI:
 
     def test_add_expense_invalid_amount(self, cli: CLI) -> None:
         """Test that non-numeric amount raises error."""
-        with pytest.raises(ValueError, match="Amount must be a positive number"):
+        with pytest.raises(ValueError, match="Amount must be a valid number"):
             cli.handle_add_expense(
                 date_str="2024/03/21",
                 category="Shopping",
@@ -119,13 +119,31 @@ class TestCLI:
 
     def test_add_expense_negative_amount(self, cli: CLI) -> None:
         """Test that negative amount raises error."""
-        with pytest.raises(ValueError, match="Amount must be a positive number"):
+        with pytest.raises(ValueError, match="Amount must be greater than or equal to 0"):
             cli.handle_add_expense(
                 date_str="2024/03/21",
                 category="Shopping",
                 amount_str="-100",
                 description="Food:Groceries",
             )
+
+    def test_add_expense_zero_amount(self, cli: CLI, mock_repository: Mock) -> None:
+        """Test that zero amount is valid for expenses."""
+        # Arrange
+        cli.repository = mock_repository
+
+        # Act
+        cli.handle_add_expense(
+            date_str="2024/03/21",
+            category="Shopping",
+            amount_str="0",
+            description="Food:Groceries",
+        )
+
+        # Assert
+        mock_repository.save_entry.assert_called_once()
+        saved_entry = mock_repository.save_entry.call_args[0][0]
+        assert saved_entry.lines[0].amount == 0
 
     def test_add_expense_missing_arguments(self, cli: CLI) -> None:
         """Test that missing arguments raise error."""
@@ -201,7 +219,7 @@ class TestCLI:
 
     def test_add_income_invalid_amount(self, cli: CLI) -> None:
         """Test that non-numeric amount raises error."""
-        with pytest.raises(ValueError, match="Amount must be a positive number"):
+        with pytest.raises(ValueError, match="Amount must be a valid number"):
             cli.handle_add_income(
                 date_str="2024/03/21",
                 category="Salary",
@@ -211,13 +229,31 @@ class TestCLI:
 
     def test_add_income_negative_amount(self, cli: CLI) -> None:
         """Test that negative amount raises error."""
-        with pytest.raises(ValueError, match="Amount must be a positive number"):
+        with pytest.raises(ValueError, match="Amount must be greater than or equal to 0"):
             cli.handle_add_income(
                 date_str="2024/03/21",
                 category="Salary",
                 amount_str="-100",
                 description="Salary:Monthly",
             )
+
+    def test_add_income_zero_amount(self, cli: CLI, mock_repository: Mock) -> None:
+        """Test that zero amount is valid for income."""
+        # Arrange
+        cli.repository = mock_repository
+
+        # Act
+        cli.handle_add_income(
+            date_str="2024/03/21",
+            category="Salary",
+            amount_str="0",
+            description="Salary:Monthly",
+        )
+
+        # Assert
+        mock_repository.save_entry.assert_called_once()
+        saved_entry = mock_repository.save_entry.call_args[0][0]
+        assert saved_entry.lines[0].amount == 0
 
     def test_add_income_missing_arguments(self, cli: CLI) -> None:
         """Test that missing arguments raise error."""

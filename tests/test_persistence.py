@@ -122,17 +122,17 @@ class TestEntryRepository:
         """Test that saving an entry maintains date order with existing entries."""
         # Arrange
         existing_content = (
-            "2024/03/22 Shopping\n"
+            "2024/03/20 Shopping\n"
             "  Shopping:Food                          SEK 100\n"
             "  * Assets:Checking\n"
             "\n"
-            "2024/03/20 Shopping\n"
+            "2024/03/22 Shopping\n"
             "  Shopping:Food                          SEK 100\n"
             "  * Assets:Checking\n"
             "\n"
         )
         expected_content = (
-            "2024/03/22 Shopping\n"
+            "2024/03/20 Shopping\n"
             "  Shopping:Food                          SEK 100\n"
             "  * Assets:Checking\n"
             "\n"
@@ -141,7 +141,7 @@ class TestEntryRepository:
             "  Shopping:Clothes                       SEK 200\n"
             "  * Assets:Checking\n"
             "\n"
-            "2024/03/20 Shopping\n"
+            "2024/03/22 Shopping\n"
             "  Shopping:Food                          SEK 100\n"
             "  * Assets:Checking\n"
             "\n"
@@ -355,3 +355,44 @@ class TestEntryRepository:
         mock_file().write.assert_called_once()
         written_content = "".join(mock_file().write.call_args_list[0][0])
         assert written_content == expected_content
+
+    def test_read_entries_with_comments(self, repository_se: EntryRepository) -> None:
+        """Test that comments in .dat files are properly ignored."""
+        # Arrange
+        content = (
+            "; This is a comment at the start of file\n"
+            "2024/03/21 Shopping\n"
+            "  ; Comment before entry line\n"
+            "  Shopping:Food                          SEK 100\n"
+            "  ; Another comment\n"
+            "  Shopping:Clothes                       SEK 200\n"
+            "  * Assets:Checking\n"
+            "\n"
+            "; Comment between entries\n"
+            "2024/03/20 Food\n"
+            "  Food:Lunch                            SEK 50\n"
+            "  * Assets:Checking\n"
+            "\n"
+        )
+        mock_file = mock_open(read_data=content)
+
+        # Act
+        with patch("builtins.open", mock_file):
+            entries = repository_se.read_entries("se-2024-03.dat")
+
+        # Assert
+        assert len(entries) == 2
+        # First entry
+        assert entries[0].entry_date == date(2024, 3, 21)
+        assert entries[0].category == "Shopping"
+        assert len(entries[0].lines) == 2
+        assert entries[0].lines[0].amount == 100
+        assert entries[0].lines[0].description == "Shopping:Food"
+        assert entries[0].lines[1].amount == 200
+        assert entries[0].lines[1].description == "Shopping:Clothes"
+        # Second entry
+        assert entries[1].entry_date == date(2024, 3, 20)
+        assert entries[1].category == "Food"
+        assert len(entries[1].lines) == 1
+        assert entries[1].lines[0].amount == 50
+        assert entries[1].lines[0].description == "Food:Lunch"
