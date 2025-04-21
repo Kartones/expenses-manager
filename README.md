@@ -64,7 +64,7 @@ For both expense and income entries:
 ### Example: Adding an Expense
 
 ```
-Enter command (expense/e, income/i, quit/q): e
+Enter command (expense/e, income/i, quit/q) [expense]: e
 Enter date (YYYY/MM/DD) [2024/03/21]: 2024/03/21
 Category: Food:Groceries
 Amount: 150
@@ -76,7 +76,7 @@ Entry saved successfully!
 ### Example: Adding Income
 
 ```
-Enter command (expense/e, income/i, quit/q): income
+Enter command (expense/e, income/i, quit/q) [expense]: income
 Enter date (YYYY/MM/DD) [2024/03/21]: 2024/03/25
 Category: Salary
 Amount: 2000
