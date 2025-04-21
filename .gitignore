@@ -39,4 +39,4 @@ dmypy.json
 Thumbs.db
 
 # Application specific
-*.dat  # Expense/Income data files
+*.dat
