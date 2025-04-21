@@ -23,9 +23,12 @@ class ExpensesManager:
     def run_interactive(self) -> None:
         """Run the application in interactive mode."""
         while True:
-            command = input("Enter command (expense/e, income/i, quit/q): ").strip().lower()
+            command = input("Enter command (expense/e, income/i, quit/q) [expense]: ").strip().lower()
             if command in ["q", "quit"]:
                 break
+
+            if not command:
+                command = "expense"
 
             try:
                 today_str = datetime.now().strftime("%Y/%m/%d")

@@ -67,3 +67,16 @@ class TestExpensesManager:
                 "quit",  # exit command
             ]
             manager.run_interactive()
+
+    def test_run_interactive_with_default_command(self, manager: ExpensesManager) -> None:
+        """Test that empty command defaults to expense."""
+        with patch("builtins.input") as mock_input:
+            mock_input.side_effect = [
+                "",  # empty command should default to expense
+                "2024/03/21",  # date
+                "Shopping",  # category
+                "100",  # amount
+                "Food:Groceries",  # description
+                "quit",  # exit command
+            ]
+            manager.run_interactive()
