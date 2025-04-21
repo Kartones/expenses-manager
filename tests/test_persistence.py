@@ -396,3 +396,215 @@ class TestEntryRepository:
         assert len(entries[1].lines) == 1
         assert entries[1].lines[0].amount == 50
         assert entries[1].lines[0].description == "Food:Lunch"
+
+    def test_read_entry_with_comments(self, repository_se: EntryRepository) -> None:
+        """Test reading an entry with both entry and line comments."""
+        # Arrange
+        file_content = (
+            "; Entry comment 1\n"
+            "; Entry comment 2\n"
+            "2024/03/21 Shopping\n"
+            "; Line 1 comment\n"
+            "  Shopping:Food                          SEK 100\n"
+            "; Line 2 comment 1\n"
+            "; Line 2 comment 2\n"
+            "  Shopping:Clothes                       SEK 200\n"
+            "  * Assets:Checking\n"
+            "\n"
+        )
+        mock_file = mock_open(read_data=file_content)
+
+        # Act
+        with patch("builtins.open", mock_file):
+            with patch("os.path.exists", return_value=True):
+                entries = repository_se.read_entries("se-2024-03.dat")
+
+        # Assert
+        assert len(entries) == 1
+        entry = entries[0]
+        assert entry.comments == ["; Entry comment 1", "; Entry comment 2"]
+        assert len(entry.lines) == 2
+        assert entry.lines[0].comments == ["; Line 1 comment"]
+        assert entry.lines[1].comments == ["; Line 2 comment 1", "; Line 2 comment 2"]
+
+    def test_read_income_entry_with_comments(self, repository_es: EntryRepository) -> None:
+        """Test reading an income entry with comments."""
+        # Arrange
+        file_content = (
+            "; Income entry comment\n"
+            "2024/03/21 Salary\n"
+            "; First payment comment\n"
+            "  * Assets:Checking                      EUR 1000\n"
+            "; Second payment comment\n"
+            "  * Assets:Checking                      EUR 500\n"
+            "  Income:Salary:Monthly\n"
+            "\n"
+        )
+        mock_file = mock_open(read_data=file_content)
+
+        # Act
+        with patch("builtins.open", mock_file):
+            with patch("os.path.exists", return_value=True):
+                entries = repository_es.read_entries("es-2024-03.dat")
+
+        # Assert
+        assert len(entries) == 1
+        entry = entries[0]
+        assert entry.comments == ["; Income entry comment"]
+        assert len(entry.lines) == 2
+        assert entry.lines[0].comments == ["; First payment comment"]
+        assert entry.lines[1].comments == ["; Second payment comment"]
+
+    def test_read_entry_with_no_comments(self, repository_se: EntryRepository) -> None:
+        """Test reading an entry without any comments."""
+        # Arrange
+        file_content = (
+            "2024/03/21 Shopping\n"
+            "  Shopping:Food                          SEK 100\n"
+            "  Shopping:Clothes                       SEK 200\n"
+            "  * Assets:Checking\n"
+            "\n"
+        )
+        mock_file = mock_open(read_data=file_content)
+
+        # Act
+        with patch("builtins.open", mock_file):
+            with patch("os.path.exists", return_value=True):
+                entries = repository_se.read_entries("se-2024-03.dat")
+
+        # Assert
+        assert len(entries) == 1
+        entry = entries[0]
+        assert entry.comments == []
+        assert len(entry.lines) == 2
+        assert entry.lines[0].comments == []
+        assert entry.lines[1].comments == []
+
+    def test_format_entry_with_comments(self, repository_se: EntryRepository) -> None:
+        """Test formatting an entry with both entry and line comments."""
+        # Arrange
+        entry = Entry(
+            entry_date=date(2024, 3, 21),
+            category="Shopping",
+            entry_type=EntryType.EXPENSE,
+            currency="SEK",
+            lines=[
+                EntryLine(amount=100, description="Shopping:Food", comments=["; Line 1 comment"]),
+                EntryLine(
+                    amount=200, description="Shopping:Clothes", comments=["; Line 2 comment 1", "; Line 2 comment 2"]
+                ),
+            ],
+            comments=["; Entry comment 1", "; Entry comment 2"],
+        )
+
+        expected_output = (
+            "; Entry comment 1\n"
+            "; Entry comment 2\n"
+            "2024/03/21 Shopping\n"
+            "; Line 1 comment\n"
+            "  Shopping:Food                          SEK 100\n"
+            "; Line 2 comment 1\n"
+            "; Line 2 comment 2\n"
+            "  Shopping:Clothes                       SEK 200\n"
+            "  * Assets:Checking\n"
+            "\n"
+        )
+
+        # Act
+        result = repository_se.format_entry(entry)
+
+        # Assert
+        assert result == expected_output
+
+    def test_format_income_entry_with_comments(self, repository_es: EntryRepository) -> None:
+        """Test formatting an income entry with comments."""
+        # Arrange
+        entry = Entry(
+            entry_date=date(2024, 3, 21),
+            category="Salary",
+            entry_type=EntryType.INCOME,
+            currency="EUR",
+            lines=[
+                EntryLine(amount=1000, description="Income:Salary:Monthly", comments=["; First payment comment"]),
+                EntryLine(amount=500, description="Income:Salary:Monthly", comments=["; Second payment comment"]),
+            ],
+            comments=["; Income entry comment"],
+        )
+
+        expected_output = (
+            "; Income entry comment\n"
+            "2024/03/21 Salary\n"
+            "; First payment comment\n"
+            "  * Assets:Checking                      EUR 1000\n"
+            "; Second payment comment\n"
+            "  * Assets:Checking                      EUR 500\n"
+            "  Income:Salary:Monthly\n"
+            "\n"
+        )
+
+        # Act
+        result = repository_es.format_entry(entry)
+
+        # Assert
+        assert result == expected_output
+
+    def test_format_entry_without_comments(self, repository_se: EntryRepository) -> None:
+        """Test formatting an entry without any comments."""
+        # Arrange
+        entry = Entry(
+            entry_date=date(2024, 3, 21),
+            category="Shopping",
+            entry_type=EntryType.EXPENSE,
+            currency="SEK",
+            lines=[
+                EntryLine(amount=100, description="Shopping:Food"),
+                EntryLine(amount=200, description="Shopping:Clothes"),
+            ],
+        )
+
+        expected_output = (
+            "2024/03/21 Shopping\n"
+            "  Shopping:Food                          SEK 100\n"
+            "  Shopping:Clothes                       SEK 200\n"
+            "  * Assets:Checking\n"
+            "\n"
+        )
+
+        # Act
+        result = repository_se.format_entry(entry)
+
+        # Assert
+        assert result == expected_output
+
+    def test_save_entry_preserves_comments(self, repository_se: EntryRepository) -> None:
+        """Test that saving an entry preserves all comments."""
+        # Arrange
+        entry = Entry(
+            entry_date=date(2024, 3, 21),
+            category="Shopping",
+            entry_type=EntryType.EXPENSE,
+            currency="SEK",
+            lines=[
+                EntryLine(amount=100, description="Shopping:Food", comments=["; Line comment"]),
+            ],
+            comments=["; Entry comment"],
+        )
+
+        expected_content = (
+            "; Entry comment\n"
+            "2024/03/21 Shopping\n"
+            "; Line comment\n"
+            "  Shopping:Food                          SEK 100\n"
+            "  * Assets:Checking\n"
+            "\n"
+        )
+
+        mock_file = mock_open()
+
+        # Act
+        with patch("builtins.open", mock_file):
+            with patch("os.path.exists", return_value=False):
+                repository_se.save_entry(entry)
+
+        # Assert
+        mock_file().write.assert_called_once_with(expected_content)

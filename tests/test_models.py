@@ -17,6 +17,43 @@ class TestEntryLine:
         # Assert
         assert entry_line.amount == amount
         assert entry_line.description == description
+        assert entry_line.comments == []
+
+    def test_entry_line_with_single_comment(self) -> None:
+        """Test creating an entry line with a single comment."""
+        # Arrange
+        amount = 100
+        description = "Shopping:Food"
+        comments = ["; A simple comment"]
+
+        # Act
+        entry_line = EntryLine(amount=amount, description=description, comments=comments)
+
+        # Assert
+        assert entry_line.comments == comments
+
+    def test_entry_line_with_multiple_comments(self) -> None:
+        """Test creating an entry line with multiple comments."""
+        # Arrange
+        amount = 100
+        description = "Shopping:Food"
+        comments = ["; First comment", "  ; Indented comment", ";Last comment"]
+
+        # Act
+        entry_line = EntryLine(amount=amount, description=description, comments=comments)
+
+        # Assert
+        assert entry_line.comments == comments
+
+    def test_entry_line_invalid_comments_type_raises_error(self) -> None:
+        """Test that invalid comments type raises an error."""
+        with pytest.raises(InvalidEntryLineError, match="Comments must be a list of strings"):
+            EntryLine(amount=100, description="Test", comments="not a list")  # type: ignore
+
+    def test_entry_line_invalid_comment_items_raises_error(self) -> None:
+        """Test that non-string comments raise an error."""
+        with pytest.raises(InvalidEntryLineError, match="Comments must be a list of strings"):
+            EntryLine(amount=100, description="Test", comments=["; valid", 42])  # type: ignore
 
     def test_invalid_amount_raises_error(self) -> None:
         """Test that negative amounts raise an error."""
@@ -66,6 +103,7 @@ class TestEntry:
         assert entry.entry_type == EntryType.EXPENSE
         assert entry.currency == "SEK"
         assert entry.lines == lines
+        assert entry.comments == []
 
     def test_valid_income_entry_creation(self) -> None:
         """Test creating a valid income entry with same descriptions."""
@@ -133,3 +171,74 @@ class TestEntry:
 
         # Assert
         assert entry.category == "Food and Drinks"
+
+    def test_entry_with_comments(self) -> None:
+        """Test creating an entry with comments."""
+        # Arrange
+        entry_date = date(2024, 3, 21)
+        category = "Shopping"
+        lines = [EntryLine(amount=100, description="Shopping:Food")]
+        comments = ["; Entry comment", "  ; Another comment"]
+
+        # Act
+        entry = Entry(
+            entry_date=entry_date,
+            category=category,
+            entry_type=EntryType.EXPENSE,
+            currency="SEK",
+            lines=lines,
+            comments=comments,
+        )
+
+        # Assert
+        assert entry.comments == comments
+
+    def test_entry_with_line_and_entry_comments(self) -> None:
+        """Test creating an entry with both entry and line comments."""
+        # Arrange
+        entry_date = date(2024, 3, 21)
+        category = "Shopping"
+        lines = [
+            EntryLine(amount=100, description="Shopping:Food", comments=["; Line comment"]),
+            EntryLine(amount=200, description="Shopping:Clothes"),
+        ]
+        entry_comments = ["; Entry comment"]
+
+        # Act
+        entry = Entry(
+            entry_date=entry_date,
+            category=category,
+            entry_type=EntryType.EXPENSE,
+            currency="SEK",
+            lines=lines,
+            comments=entry_comments,
+        )
+
+        # Assert
+        assert entry.comments == entry_comments
+        assert entry.lines[0].comments == ["; Line comment"]
+        assert entry.lines[1].comments == []
+
+    def test_entry_invalid_comments_type_raises_error(self) -> None:
+        """Test that invalid comments type raises an error."""
+        with pytest.raises(InvalidEntryError, match="Comments must be a list of strings"):
+            Entry(
+                entry_date=date(2024, 3, 21),
+                category="Test",
+                entry_type=EntryType.EXPENSE,
+                currency="SEK",
+                lines=[EntryLine(amount=100, description="Test")],
+                comments="not a list",  # type: ignore
+            )
+
+    def test_entry_invalid_comment_items_raises_error(self) -> None:
+        """Test that non-string comments raise an error."""
+        with pytest.raises(InvalidEntryError, match="Comments must be a list of strings"):
+            Entry(
+                entry_date=date(2024, 3, 21),
+                category="Test",
+                entry_type=EntryType.EXPENSE,
+                currency="SEK",
+                lines=[EntryLine(amount=100, description="Test")],
+                comments=["; valid", 42],  # type: ignore
+            )

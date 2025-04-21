@@ -27,10 +27,16 @@ class EntryRepository:
     def format_entry(self, entry: Entry) -> str:
         """Format an entry for writing to file."""
         lines = []
+
+        # Add entry comments
+        lines.extend(entry.comments)
+
         lines.append(f"{entry.entry_date.strftime('%Y/%m/%d')} {entry.category}")
 
         if entry.entry_type == EntryType.EXPENSE:
             for line in entry.lines:
+                # Add line comments if any
+                lines.extend(line.comments)
                 # Total width before currency should be exactly 39 characters
                 # This includes the 2 initial spaces and the description
                 padding_length = 39 - len(line.description)
@@ -38,6 +44,8 @@ class EntryRepository:
             lines.append("  * Assets:Checking")
         else:  # INCOME
             for line in entry.lines:
+                # Add line comments if any
+                lines.extend(line.comments)
                 # Exactly 22 spaces between "* Assets:Checking" and currency
                 lines.append(f"  * Assets:Checking{' ' * 22}{entry.currency} {line.amount}")
             lines.append(f"  {line.description}")
@@ -126,6 +134,8 @@ class EntryRepository:
         """Read all entries from a file."""
         entries: List[Entry] = []
         current_entry_lines: List[str] = []
+        current_entry_comments: List[str] = []
+        current_line_comments: List[str] = []
 
         with open(filepath) as f:
             for line in f:
@@ -134,19 +144,40 @@ class EntryRepository:
                 # Skip empty lines
                 if not line:
                     if current_entry_lines:
-                        entries.append(self._parse_entry(current_entry_lines))
+                        entries.append(
+                            self._parse_entry(current_entry_lines, current_entry_comments, current_line_comments)
+                        )
                         current_entry_lines = []
+                        current_entry_comments = []
+                        current_line_comments = []
                     continue
 
-                # Skip comment lines
+                # Collect comments
                 if line.lstrip().startswith(";"):
+                    # If we haven't started collecting entry lines yet, these are entry comments
+                    if not current_entry_lines:
+                        current_entry_comments.append(line)
+                    # Otherwise these are line comments for the next line
+                    else:
+                        current_line_comments.append(line)
                     continue
+
+                # If we have line comments and this is a new line, attach them to the previous line
+                if current_line_comments and current_entry_lines:
+                    # Insert comments before the last line
+                    insert_pos = len(current_entry_lines) - 1
+                    current_entry_lines[insert_pos:insert_pos] = current_line_comments
+                    current_line_comments = []
 
                 current_entry_lines.append(line)
 
             # Handle last entry if file doesn't end with empty line
             if current_entry_lines:
-                entries.append(self._parse_entry(current_entry_lines))
+                # Handle any remaining line comments
+                if current_line_comments:
+                    insert_pos = len(current_entry_lines) - 1
+                    current_entry_lines[insert_pos:insert_pos] = current_line_comments
+                entries.append(self._parse_entry(current_entry_lines, current_entry_comments, current_line_comments))
 
         return entries
 
@@ -196,16 +227,26 @@ class EntryRepository:
         """Sort entries by date in ascending order."""
         return sorted(entries, key=lambda e: e.entry_date)
 
-    def _parse_entry(self, lines: List[str]) -> Entry:
-        """Parse an entry from its lines."""
-        # Filter out comment lines
-        lines = [line for line in lines if not line.lstrip().startswith(";")]
+    def _parse_entry(self, lines: List[str], entry_comments: List[str], line_comments: List[str]) -> Entry:
+        """Parse an entry from its lines and comments."""
+        # First, extract and group line comments with their target lines
+        line_comment_groups: List[List[str]] = []
+        content_lines: List[str] = []
+        current_comments: List[str] = []
 
-        if not lines:
+        for line in lines:
+            if line.lstrip().startswith(";"):
+                current_comments.append(line)
+            else:
+                content_lines.append(line)
+                line_comment_groups.append(current_comments)
+                current_comments = []
+
+        if not content_lines:
             raise ValueError("Empty entry")
 
         # Parse header
-        header = lines[0].split(" ", 1)
+        header = content_lines[0].split(" ", 1)
         if len(header) != 2:
             raise ValueError("Invalid entry header")
 
@@ -213,46 +254,66 @@ class EntryRepository:
         category = header[1]
 
         # Determine entry type and currency
-        is_expense = "* Assets:Checking" in lines[-1]
+        is_expense = "* Assets:Checking" in content_lines[-1]
         entry_lines = []
         entry_currency = None
 
         if is_expense:
             entry_type = EntryType.EXPENSE
             # Parse expense lines (excluding header and footer)
-            for line in lines[1:-1]:
+            line_idx = 0
+            for line in content_lines[1:-1]:
                 if "* Assets:Checking" in line:
+                    line_idx += 1
                     continue
                 parts = line.strip().split()
                 if len(parts) < 3:
+                    line_idx += 1
                     continue
                 try:
                     currency = parts[-2]
                     amount = int(parts[-1])
                     description = " ".join(parts[:-2])
-                    entry_lines.append(EntryLine(amount=amount, description=description))
+                    entry_lines.append(
+                        EntryLine(
+                            amount=amount,
+                            description=description,
+                            comments=line_comment_groups[line_idx] if line_idx < len(line_comment_groups) else [],
+                        )
+                    )
                     if entry_currency is None:
                         entry_currency = currency
                 except ValueError:
-                    continue
+                    pass
+                line_idx += 1
         else:
             entry_type = EntryType.INCOME
             # Parse income lines (excluding header and description)
-            description = lines[-1].strip()
-            for line in lines[1:-1]:
+            description = content_lines[-1].strip()
+            line_idx = 0
+            for line in content_lines[1:-1]:
                 if not line.strip().startswith("* Assets:Checking"):
+                    line_idx += 1
                     continue
                 parts = line.strip().split()
                 if len(parts) < 4:
+                    line_idx += 1
                     continue
                 try:
                     currency = parts[-2]
                     amount = int(parts[-1])
-                    entry_lines.append(EntryLine(amount=amount, description=description))
+                    entry_lines.append(
+                        EntryLine(
+                            amount=amount,
+                            description=description,
+                            comments=line_comment_groups[line_idx] if line_idx < len(line_comment_groups) else [],
+                        )
+                    )
                     if entry_currency is None:
                         entry_currency = currency
                 except ValueError:
-                    continue
+                    pass
+                line_idx += 1
 
         if not entry_lines:
             raise ValueError("No valid entry lines found")
@@ -266,4 +327,5 @@ class EntryRepository:
             entry_type=entry_type,
             currency=entry_currency,
             lines=entry_lines,
+            comments=entry_comments,
         )
